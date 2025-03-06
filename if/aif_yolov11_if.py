@@ -95,7 +95,7 @@ class Yolov11AIF(object):
             return models_dict
         else:
             self.cfg_files = glob.glob(os.path.join(self.models_folder_path,'*.yaml'))
-            nepi_msg.printMsgInfo("ai_yolov11_if: Found network config files: " + str(self.cfg_files))
+            nepi_msg.printMsgInfo("ai_yolov11_if: Found model info files: " + str(self.cfg_files))
             # Remove the ros.yaml file -- that one doesn't represent a selectable trained neural net
             for f in self.cfg_files:
                 cfg_dict = dict()
