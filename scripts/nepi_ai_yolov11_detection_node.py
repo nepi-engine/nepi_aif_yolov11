@@ -103,7 +103,9 @@ class Yolov11Detector():
                 #nepi_sdk.sleep(800)
 
                 self.msg_if.pub_info("Starting ai_if with default_config_dict: " + str(self.default_config_dict))
-                self.ai_if = AiDetectorIF(model_name = self.node_name,
+                self.ai_if = AiDetectorIF(
+                                    namespace = self.node_namespace,
+                                    model_name = self.node_name,
                                     framework = model_framework,
                                     description = model_description,
                                     proc_img_height = self.proc_img_height,
@@ -114,7 +116,6 @@ class Yolov11Detector():
                                     preprocessImageFunction = self.preprocessImage,
                                     processDetectionFunction = self.processDetection,
                                     has_img_tiling = False)
-
                 #########################################################
                 ## Initiation Complete
                 self.msg_if.pub_info("Initialization Complete")
