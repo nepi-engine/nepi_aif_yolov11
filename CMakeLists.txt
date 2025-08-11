@@ -100,7 +100,7 @@ install(DIRECTORY launch/
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 set( NEPI_AIF_SHARE_FOLDER 
   # Must hard-coded 
-  /opt/nepi/ros/share/nepi_aifs
+  /opt/nepi/engine/share/nepi_aifs
 )
 
 install(DIRECTORY params/
@@ -109,7 +109,7 @@ install(DIRECTORY params/
 
 set( NEPI_API_FOLDER 
   # Must hard-coded 
-  /opt/nepi/ros/lib/python3/dist-packages/nepi_api
+  /opt/nepi/engine/lib/python3/dist-packages/nepi_api
 )
 
 install(DIRECTORY api/
