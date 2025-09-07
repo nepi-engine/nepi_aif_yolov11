@@ -41,7 +41,6 @@ from nepi_api.messages_if import MsgIF
 
 class Yolov11Detector():
     default_config_dict = {'threshold': 0.3,'max_rate': 5}
-
     #######################
     ### Node Initialization
     DEFAULT_NODE_NAME = "ai_yolov11" # Can be overwitten by luanch command
@@ -52,7 +51,6 @@ class Yolov11Detector():
         self.base_namespace = nepi_sdk.get_base_namespace()
         self.node_name = nepi_sdk.get_node_name()
         self.node_namespace = nepi_sdk.get_node_namespace()
-
         ##############################  
         # Create Msg Class
         self.msg_if = MsgIF(log_name = self.class_name)
@@ -101,6 +99,12 @@ class Yolov11Detector():
 
                 #self.msg_if.pub_info("Waiting " + str(800) + " seconds for model to load")
                 #nepi_sdk.sleep(800)
+
+                # Initialize Detector with Blank Img
+                self.msg_if.pub_info("Initializing detector with blank img")
+                init_cv2_img=nepi_img.create_cv2_blank_img()
+                init_cv2_img=self.preprocessImage(init_cv2_img)
+                det_dict=self.processDetection(init_cv2_img)
 
                 self.msg_if.pub_info("Starting ai_if with default_config_dict: " + str(self.default_config_dict))
                 self.ai_if = AiDetectorIF(
