@@ -196,7 +196,7 @@ class Yolov11Detector():
 
                     try:
                         # Inference
-                        results = self.model(cv2_img, conf=threshold, verbose=False)
+                        results = self.model(cv2_img, conf=threshold, verbose=False, device=self.device)
                         #self.msg_if.pub_warn("Got Yolov11 detection results: " + str(results[0].boxes))
                 
                         #self.msg_if.pub_warn("Got Yolov11 detection results: " + str(results[0].boxes))
