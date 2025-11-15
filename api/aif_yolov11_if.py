@@ -105,7 +105,7 @@ class Yolov11AIF(object):
                     try:
                         # Validate that it is a proper config file and gather weights file size info for load-time estimates
                         #nepi_sdk.log_msg_warn(self.log_name + ": Loading yaml data from file: " + f) 
-                        cfg_dict = yaml.load(yaml_stream)  
+                        cfg_dict = yaml.load(yaml_stream, Loader=yaml.FullLoader)
                         model_keys = list(cfg_dict.keys())
                         model_key = model_keys[0]
                         #nepi_sdk.log_msg_warn(self.log_name + ": Loaded yaml data from file: " + f) 
