@@ -25,8 +25,6 @@ import cv2
 import numpy as np
 
 
-from ultralytics import YOLO
-
 from nepi_sdk import nepi_sdk
 from nepi_sdk import nepi_utils
 from nepi_sdk import nepi_img
@@ -44,6 +42,8 @@ class Yolov11Detector():
     #######################
     ### Node Initialization
     DEFAULT_NODE_NAME = "ai_yolov11" # Can be overwitten by luanch command
+    MODEL_FRAMEWORK="yolov11"
+
     def __init__(self):
         ####  NODE Initialization ####
         nepi_sdk.init_node(name= self.DEFAULT_NODE_NAME)
@@ -51,25 +51,36 @@ class Yolov11Detector():
         self.base_namespace = nepi_sdk.get_base_namespace()
         self.node_name = nepi_sdk.get_node_name()
         self.node_namespace = nepi_sdk.get_node_namespace()
+
         ##############################  
         # Create Msg Class
         self.msg_if = MsgIF(log_name = self.class_name)
         self.msg_if.pub_info("Starting Node Initialization Processes")
 
+
+        ##############################  
+        # Import ultralytics here so we can message
+        self.msg_if.pub_warn("Importing ultralytics YOLO package")
+        from ultralytics import YOLO
+
+
         ##############################  
         # Initialize Class Variables
         node_params = nepi_sdk.get_param("~")
         self.msg_if.pub_info("Starting node params: " + str(node_params))
-        self.all_namespace = nepi_sdk.get_param("~all_namespace","")
+        param_namespace = nepi_sdk.create_namespace(self.node_namespace,'all_namespace')
+        self.all_namespace = nepi_sdk.get_param(param_namespace,"")
         if self.all_namespace == "":
             self.all_namespace = self.node_namespace
-        self.weight_file_path = nepi_sdk.get_param("~weight_file_path","")
+        param_namespace = nepi_sdk.create_namespace(self.node_namespace,'weight_file_path')
+        self.weight_file_path = nepi_sdk.get_param(param_namespace,"")
         if self.weight_file_path == "":
-            self.msg_if.pub_warn("Failed to get required node info from param server: ")
+            self.msg_if.pub_warn("Failed to get required node info from param server at: " + str(param_namespace))
             nepi_sdk.signal_shutdown("Failed to get valid model info from param")
         else:
             # The ai_models param is created by the launch files load network_param_file line
-            model_info = nepi_sdk.get_param("~ai_model","")
+            param_namespace = nepi_sdk.create_namespace(self.node_namespace,'ai_model')
+            model_info = nepi_sdk.get_param(param_namespace,"")
             if model_info == "":
                 self.msg_if.pub_warn("Failed to get required model info from params: ")
                 nepi_sdk.signal_shutdown("Failed to get valid model file paths")
@@ -85,8 +96,8 @@ class Yolov11Detector():
                     self.msg_if.pub_warn("Failed to get required model info from params: " + str(e))
                     nepi_sdk.signal_shutdown("Failed to get valid model file paths")
 
-                if model_framework != 'yolov11':
-                    self.msg_if.pub_warn("Model not a yolov11 model: " + model_framework)
+                if model_framework != self.MODEL_FRAMEWORK:
+                    self.msg_if.pub_warn("Model not a " + self.MODEL_FRAMEWORK  + " model: " + model_framework)
                     nepi_sdk.signal_shutdown("Model not a valid framework")
 
 
@@ -136,6 +147,7 @@ class Yolov11Detector():
                                     all_namespace = self.all_namespace,
                                     processDetectionFunction = self.processDetection,
                                     has_img_tiling = False)
+
                 #########################################################
                 ## Initiation Complete
                 self.msg_if.pub_info("Initialization Complete")
@@ -159,92 +171,91 @@ class Yolov11Detector():
         detect_dict_list = []
         if cv2_img is not None:
 
-            cv2_img_shape = cv2_img.shape
-            cv2_img_width = cv2_img_shape[1]
-            cv2_img_height = cv2_img_shape[0]
-            cv2_img_area = cv2_img_shape[0] * cv2_img_shape[1]
+                cv2_img_shape = cv2_img.shape
+                cv2_img_width = cv2_img_shape[1]
+                cv2_img_height = cv2_img_shape[0]
+                cv2_img_area = cv2_img_shape[0] * cv2_img_shape[1]
 
-            if resize == True:
-                [cv2_img,rescale_ratio,prc_width,prc_height] = nepi_img.resize_proportionally(cv2_img, self.proc_img_width,self.proc_img_height,interp = cv2.INTER_NEAREST)
-            else:
-                rescale_ratio = 1
-                prc_width = cv2_img_width
-                prc_height = cv2_img_height
+                if resize == True:
+                    [cv2_img,rescale_ratio,prc_width,prc_height] = nepi_img.resize_proportionally(cv2_img, self.proc_img_width,self.proc_img_height,interp = cv2.INTER_NEAREST)
+                else:
+                    rescale_ratio = 1
+                    prc_width = cv2_img_width
+                    prc_height = cv2_img_height
 
-            # Convert to RGB
-            if nepi_img.is_gray(cv2_img):
-                cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_GRAY2BGR)
-            else:
-                cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
+                # Convert to RGB
+                if nepi_img.is_gray(cv2_img):
+                    cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_GRAY2BGR)
+                else:
+                    cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
 
-            #self.msg_if.pub_info(":yolov5: Preprocessed image with image size: " + str(cv2_img.shape))
-            # Create image dict with new image
-            img_dict['image_width'] = cv2_img_width 
-            img_dict['image_height'] = cv2_img_height 
-            img_dict['prc_width'] = prc_width 
-            img_dict['prc_height'] = prc_height 
-            img_dict['ratio'] = rescale_ratio 
-            img_dict['tiling'] = False
-
-
+                #self.msg_if.pub_info(":yolov5: Preprocessed image with image size: " + str(cv2_img.shape))
+                # Create image dict with new image
+                img_dict['image_width'] = cv2_img_width 
+                img_dict['image_height'] = cv2_img_height 
+                img_dict['prc_width'] = prc_width 
+                img_dict['prc_height'] = prc_height 
+                img_dict['ratio'] = rescale_ratio 
+                img_dict['tiling'] = False
 
 
-            # Update model settings
-            self.model.conf = threshold  # Confidence threshold (0-1)
+                # Update model settings
+                self.model.conf = threshold  # Confidence threshold (0-1)
 
-            try:
-                # Inference
-                start_time = nepi_sdk.get_time()
+                try:
+                    # Inference
+                    start_time = nepi_sdk.get_time()
 
-                results = self.model(cv2_img, conf=threshold, verbose=False) #, device=self.device)
+                    results = self.model(cv2_img, conf=threshold, verbose=False) #, device=self.device)
 
-                detect_time = round( (nepi_sdk.get_time() - start_time) , 3)
-
-
-                ids = results[0].boxes.cls.to('cpu').tolist()
-                boxes = results[0].boxes.xyxy.to('cpu').tolist()
-                confs = results[0].boxes.conf.to('cpu').tolist()
-
-                # self.msg_if.pub_warn("Got detection ids: " + str(ids))
-                # self.msg_if.pub_warn("Got detection boxes: " + str(boxes))
-                # self.msg_if.pub_warn("Got detection confs: " + str(confs))
-            
-            except Exception as e:
-                self.msg_if.pub_info("Failed to process detection with exception: " + str(e))
-        
-            
-            for i, idf in enumerate(ids):
-                id = int(idf)
-                det_name = self.classes[id]
-                det_id = id
-                det_prob = confs[i]
-                det_box = boxes[i]
-                det_area = (det_box[2] - det_box[0]) * (det_box[3] - det_box[1])
-                detect_dict = {
-                    'name': det_name, # Class String Name
-                    'id': det_id, # Class Index from Classes List
-                    'uid': '', # Reserved for unique tracking by downstream applications
-                    'prob': det_prob, # Probability of detection
-                    'xmin': int(det_box[0] ),
-                    'ymin': int(det_box[1] ) ,
-                    'xmax': int(det_box[2] ),
-                    'ymax': int(det_box[3]),
-                    'area_pixels': int(det_area),
-                    'area_ratio': det_area / cv2_img_area
-                }
-                # Rescale to orig image size
-                detect_dict['xmin'] = int(detect_dict['xmin'] * rescale_ratio)
-                detect_dict['ymin'] = int(detect_dict['ymin'] * rescale_ratio)
-                detect_dict['xmax'] = int(detect_dict['xmax'] * rescale_ratio)
-                detect_dict['ymax'] = int(detect_dict['ymax'] * rescale_ratio)
-                detect_dict_list.append(detect_dict)
+                    detect_time = round( (nepi_sdk.get_time() - start_time) , 3)
 
 
-                if verbose == True:
-                    self.msg_if.pub_info("Detector Detect Time: " + str(detect_time))
-                    self.msg_if.pub_info("Got detect dict entry: " + str(detect_dict))
+                    ids = results[0].boxes.cls.to('cpu').tolist()
+                    boxes = results[0].boxes.xyxy.to('cpu').tolist()
+                    confs = results[0].boxes.conf.to('cpu').tolist()
+
+                    # self.msg_if.pub_warn("Got detection ids: " + str(ids))
+                    # self.msg_if.pub_warn("Got detection boxes: " + str(boxes))
+                    # self.msg_if.pub_warn("Got detection confs: " + str(confs))
                 
+                except Exception as e:
+                    self.msg_if.pub_info("Failed to process detection with exception: " + str(e))
+            
+                
+                for i, idf in enumerate(ids):
+                    id = int(idf)
+                    det_name = self.classes[id]
+                    det_id = id
+                    det_prob = confs[i]
+                    det_box = boxes[i]
+                    det_area = (det_box[2] - det_box[0]) * (det_box[3] - det_box[1])
+                    detect_dict = {
+                        'name': det_name, # Class String Name
+                        'id': det_id, # Class Index from Classes List
+                        'uid': '', # Reserved for unique tracking by downstream applications
+                        'prob': det_prob, # Probability of detection
+                        'xmin': int(det_box[0] ),
+                        'ymin': int(det_box[1] ) ,
+                        'xmax': int(det_box[2] ),
+                        'ymax': int(det_box[3]),
+                        'area_pixels': int(det_area),
+                        'area_ratio': det_area / cv2_img_area
+                    }
+                    # Rescale to orig image size
+                    detect_dict['xmin'] = int(detect_dict['xmin'] * rescale_ratio)
+                    detect_dict['ymin'] = int(detect_dict['ymin'] * rescale_ratio)
+                    detect_dict['xmax'] = int(detect_dict['xmax'] * rescale_ratio)
+                    detect_dict['ymax'] = int(detect_dict['ymax'] * rescale_ratio)
+                    detect_dict_list.append(detect_dict)
+
+
+                    if verbose == True:
+                        self.msg_if.pub_info("Detector Detect Time: " + str(detect_time))
+                        self.msg_if.pub_info("Got detect dict entry: " + str(detect_dict))
+            
         return [detect_dict_list, img_dict]
+
 
 
 
