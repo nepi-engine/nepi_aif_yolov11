@@ -58,11 +58,6 @@ class Yolov11Detector():
         self.msg_if.pub_info("Starting Node Initialization Processes")
 
 
-        ##############################  
-        # Import ultralytics here so we can message
-        self.msg_if.pub_warn("Importing ultralytics YOLO package")
-        from ultralytics import YOLO
-
 
         ##############################  
         # Initialize Class Variables
@@ -113,6 +108,12 @@ class Yolov11Detector():
                     self.msg_if.pub_warn("CUDA GPU Count: " + str(cuda_count))
                     if cuda_count > 0:
                         self.device = 'cuda'
+
+
+                ##############################  
+                # Import ultralytics here so we can message
+                self.msg_if.pub_warn("Importing ultralytics YOLO package")
+                from ultralytics import YOLO
 
                 self.msg_if.pub_warn("Loading model: " + self.node_name)
                 self.model = YOLO(self.weight_file_path)
