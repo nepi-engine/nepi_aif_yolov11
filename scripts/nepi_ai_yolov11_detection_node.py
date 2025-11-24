@@ -20,7 +20,6 @@ import os
 import time
 import copy
 import sys
-import torch
 import cv2
 import numpy as np
 
@@ -117,6 +116,17 @@ class Yolov11Detector():
                 nepi_sdk.signal_shutdown("Model not a valid type")
                 return
             
+
+
+            ##############################  
+            # Load Model
+
+            # Import ultralytics here so we can message
+            self.msg_if.pub_warn("Importing torch and ultralytics YOLO package")
+            import torch
+            from ultralytics import YOLO
+
+
             self.device = 'cpu'
             has_cuda = torch.cuda.is_available()
             self.msg_if.pub_warn("CUDA available: " + str(has_cuda))
@@ -126,17 +136,6 @@ class Yolov11Detector():
                 if cuda_count > 0:
                     self.device = 'cuda'
 
-
-            ##############################  
-            # Load Model
-
-            # Import ultralytics here so we can message
-            self.msg_if.pub_warn("Importing ultralytics YOLO package")
-            from ultralytics import YOLO
-
-            self.msg_if.pub_warn("Loading model: " + self.node_name)
-            self.model = YOLO(self.weight_file_path)
-            #self.model.half() # Reduce from INT16 to INT8
             ##############################  
 
 
